@@ -1,0 +1,20 @@
+[project]
+name = "ab-testing-uplift-modeling"
+version = "1.0.0"
+description = "Randomised A/B experiment analysis with T-learner uplift modelling, Qini/AUUC evaluation and validity checks"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "scikit-learn>=1.4",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
