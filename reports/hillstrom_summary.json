@@ -1,0 +1,61 @@
+{
+  "source": "http://www.minethatdata.com/Kevin_Hillstrom_MineThatData_E-MailAnalytics_DataMiningChallenge_2008.03.20.csv",
+  "customers": 64000,
+  "segments": {
+    "Womens E-Mail": 21387,
+    "Mens E-Mail": 21307,
+    "No E-Mail": 21306
+  },
+  "arms": {
+    "Mens E-Mail": {
+      "arm": "Mens E-Mail",
+      "n": 21307,
+      "conversion_treated": 0.01253,
+      "conversion_control": 0.00573,
+      "conversion_lift_pp": 0.681,
+      "conversion_ci_pp": [
+        0.5,
+        0.861
+      ],
+      "visit_lift_pp": 7.659,
+      "spend_lift": 0.7698,
+      "spend_p": 1.163814968225477e-07
+    },
+    "Womens E-Mail": {
+      "arm": "Womens E-Mail",
+      "n": 21387,
+      "conversion_treated": 0.00884,
+      "conversion_control": 0.00573,
+      "conversion_lift_pp": 0.311,
+      "conversion_ci_pp": [
+        0.15,
+        0.472
+      ],
+      "visit_lift_pp": 4.523,
+      "spend_lift": 0.4244,
+      "spend_p": 0.0011293971023632497
+    }
+  },
+  "uplift": {
+    "Mens E-Mail": {
+      "arm": "Mens E-Mail",
+      "n": 42613,
+      "holdout": 12863,
+      "qini_area": 25.9566,
+      "random_baseline_area": 29.7437,
+      "qini_lift_over_random": -0.1273,
+      "top_decile_uplift_pp": 0.7609,
+      "overall_uplift_pp": 0.9328
+    },
+    "Womens E-Mail": {
+      "arm": "Womens E-Mail",
+      "n": 42693,
+      "holdout": 12886,
+      "qini_area": 18.0832,
+      "random_baseline_area": 12.9683,
+      "qini_lift_over_random": 0.3944,
+      "top_decile_uplift_pp": 1.5528,
+      "overall_uplift_pp": 0.4022
+    }
+  }
+}

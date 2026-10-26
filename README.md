@@ -113,6 +113,25 @@ Bootstrap，而不是对两者都跑 t 检验。
 > 统计检验结果跨环境稳定；模型指标（AUUC / Spearman / Top10%）会随 scikit-learn 版本略有差异
 > （1.7.2：0.735 / 0.830 / 10.95 pp；1.9.1：0.756 / 0.830 / 11.01 pp）。
 
+### 4.5 真实数据验证（Hillstrom 2008 邮件实验）
+
+在 [Hillstrom MineThatData 公开实验](http://www.minethatdata.com/Kevin_Hillstrom_MineThatData_E-MailAnalytics_DataMiningChallenge_2008.03.20.csv)
+（64,000 人、男士 / 女士 / 无邮件三组）上复跑，结果写在 `reports/hillstrom_summary.json`：
+
+| 对比 | 转化率增量 | 访问增量 | 人均消费增量 |
+| --- | --- | --- | --- |
+| 男士邮件 vs 无邮件 | +0.68 pp（95% CI 0.50–0.86） | +7.66 pp | +$0.77 |
+| 女士邮件 vs 无邮件 | +0.31 pp（95% CI 0.15–0.47） | +4.52 pp | +$0.42 |
+
+增量模型（T-learner，70/30 按用户切分）：女士邮件组 Top 10% 人群转化增量 1.55 pp（全样本 0.40 pp），
+Qini 面积比随机基线高 39%；男士邮件组排序不稳定（Qini 低于随机），如实记录——Hillstrom 的协变量对
+增量区分度有限，这是真实数据的常见结果。
+
+```bash
+python scripts/hillstrom_analysis.py   # 首次运行会自动下载 CSV 到 data/
+```
+
+
 ## 5. 关键设计决策
 
 1. **先做有效性检查，再做检验**：SRM 触发或最大 |SMD| ≥ 0.1 时流水线直接失败，不允许在分流坏掉的数据上做分析。
