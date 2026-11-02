@@ -1,16 +1,16 @@
-# A/B Testing & Uplift Modeling
+﻿# A/B Testing & Uplift Modeling
 
 随机实验分析 + T-learner 增量模型：分流校验（SRM）、协变量平衡、转化率/人均 GMV 假设检验、
 分层 Bootstrap、Holm 多重比较，以及 Qini / AUUC 增量评估。
-**模拟实验数据** —— 由 `src/abtest/simulate.py` 按已知机制生成，真实效应已知，用来检验估计流程而非描述真实业务。
+**主数据为 Hillstrom 公开邮件实验（64,000 人，真实数据）**；`src/abtest/simulate.py` 生成的模拟实验仅用于单元测试和"真实效应已知"的方法校验。
 
 | 项目 | 说明 |
 | --- | --- |
 | 语言 / 依赖 | Python 3.13（≥3.10）、pandas、numpy、scipy、scikit-learn、matplotlib |
-| 数据 | 60,000 名模拟用户，50/50 随机分流，已知真实 ATE |
+| 数据 | Hillstrom 公开邮件实验：64,000 人、男士/女士/无邮件三组（真实数据）；模拟数据仅用于测试 |
 | 核心能力 | 实验设计校验、假设检验、Bootstrap、T-learner、Qini/AUUC、分层增量、可复现报告 |
 | 测试 | `pytest` 39 项全部通过 |
-| 报告 | [`reports/analysis_report.md`](reports/analysis_report.md)（4 张图，全部来自实际运行） |
+| 报告 | [`reports/hillstrom_report.md`](reports/hillstrom_report.md)（真实数据；含 Qini/十分位图） |
 
 ## 1. 快速开始
 
@@ -69,7 +69,24 @@ python scripts/run_pipeline.py  # 模拟 → 校验 → 检验 → 增量模型 
 方法选择原则：**按指标类型选检验**，不机械套用同一种检验；二值指标用比例检验，连续偏态指标用 Welch +
 Bootstrap，而不是对两者都跑 t 检验。
 
-## 4. 实际运行结果（seed = 20240101）
+## 4. 实际运行结果（Hillstrom 2008，真实公开数据）
+
+数据：[Hillstrom MineThatData 邮件实验](http://www.minethatdata.com/Kevin_Hillstrom_MineThatData_E-MailAnalytics_DataMiningChallenge_2008.03.20.csv)，
+64,000 人，男士邮件 21,307 / 女士邮件 21,387 / 无邮件 21,306。
+
+### 4.1 实验有效性
+
+| 检查 | 结果 |
+| --- | --- |
+| 三组 SRM 卡方 | χ²=0.20，p=0.904（未触发） |
+| 最大 \|SMD\| | 0.016（阈值 0.1，平衡） |
+| 结局指标 | visit / conversion / spend |
+
+### 4.2 三组效果（vs 无邮件）
+
+| 对比 | 转化率增量 | 访问增量 | 人均消费增量 |
+| --- | --- | --- | --- |
+| 男士邮件 | **+0.68 pp**（95% CI 0.50–0.86） | +7.66 pp | +## 4. 实际运行结果（seed = 20240101）
 
 ### 4.1 实验有效性
 
@@ -131,6 +148,89 @@ Qini 面积比随机基线高 39%；男士邮件组排序不稳定（Qini 低于
 python scripts/hillstrom_analysis.py   # 首次运行会自动下载 CSV 到 data/
 ```
 
+
+## 5. 关键设计决策.77 |
+| 女士邮件 | **+0.31 pp**（95% CI 0.15–0.47） | +4.52 pp | +## 4. 实际运行结果（seed = 20240101）
+
+### 4.1 实验有效性
+
+| 检查 | 结果 |
+| --- | --- |
+| 样本量 | 60,000（30,061 / 29,939） |
+| SRM 卡方 p 值 | 0.6184（未触发） |
+| 最大 \|SMD\| | 0.0156（阈值 0.1，平衡） |
+| 数据完整性 | 6 项检查全部 0 违规 |
+| MDE（α=0.05，power=80%） | 0.59 pp |
+
+### 4.2 主指标
+
+| 指标 | 实验组 | 对照组 | 差异 | 95% CI | p |
+| --- | --- | --- | --- | --- | --- |
+| 转化率 | 11.15% | 7.19% | **+3.96 pp** | [3.50, 4.42] | < 1e-300 |
+| 人均 GMV | 15.26 | 9.93 | **+5.34** | [4.51, 6.16] | 5.43e-37 |
+
+模拟器设定的真实 ATE = **3.98 pp**（转化率），落在估计的 95% CI 内 —— 说明估计流程无系统性偏差。
+
+### 4.3 增量模型
+
+| 指标 | 数值 |
+| --- | --- |
+| 训练 / 测试用户 | 42,081 / 17,919（按用户切分） |
+| Qini 面积（模型 / oracle / 随机基线） | 234.72 / 254.14 / 180.97 |
+| 归一化 Qini 系数（0 = 随机，1 = oracle） | **0.7346** |
+| 模型分数与真实 uplift 的 Spearman 相关 | 0.8301 |
+| Top 10% 预测增量用户的实际 uplift | **10.95 pp**（全样本 3.96 pp） |
+
+### 4.4 实验前分层的观察增量
+
+| 分层 | 用户数 | 转化率增量 | 95% CI |
+| --- | --- | --- | --- |
+| 0 orders | 18,047 | +0.99 pp | [0.31, 1.67] |
+| 1 order | 21,613 | +3.32 pp | [2.58, 4.05] |
+| 2-3 orders | 18,268 | +6.88 pp | [5.93, 7.83] |
+| 4+ orders | 2,072 | +10.19 pp | [6.86, 13.52] |
+
+> 数字来自 `outputs/pipeline_summary.json` 与 `reports/analysis_report.md`；全部为模拟数据结果。
+> 统计检验结果跨环境稳定；模型指标（AUUC / Spearman / Top10%）会随 scikit-learn 版本略有差异
+> （1.7.2：0.735 / 0.830 / 10.95 pp；1.9.1：0.756 / 0.830 / 11.01 pp）。
+
+### 4.5 真实数据验证（Hillstrom 2008 邮件实验）
+
+在 [Hillstrom MineThatData 公开实验](http://www.minethatdata.com/Kevin_Hillstrom_MineThatData_E-MailAnalytics_DataMiningChallenge_2008.03.20.csv)
+（64,000 人、男士 / 女士 / 无邮件三组）上复跑，结果写在 `reports/hillstrom_summary.json`：
+
+| 对比 | 转化率增量 | 访问增量 | 人均消费增量 |
+| --- | --- | --- | --- |
+| 男士邮件 vs 无邮件 | +0.68 pp（95% CI 0.50–0.86） | +7.66 pp | +$0.77 |
+| 女士邮件 vs 无邮件 | +0.31 pp（95% CI 0.15–0.47） | +4.52 pp | +$0.42 |
+
+增量模型（T-learner，70/30 按用户切分）：女士邮件组 Top 10% 人群转化增量 1.55 pp（全样本 0.40 pp），
+Qini 面积比随机基线高 39%；男士邮件组排序不稳定（Qini 低于随机），如实记录——Hillstrom 的协变量对
+增量区分度有限，这是真实数据的常见结果。
+
+```bash
+python scripts/hillstrom_analysis.py   # 首次运行会自动下载 CSV 到 data/
+```
+
+
+## 5. 关键设计决策.42 |
+
+6 个检验（2 组 × 3 指标）经 Holm 校正后仍全部显著。
+
+### 4.3 增量模型（T-learner，70/30 按用户切分）
+
+| 组 | 测试集 | Qini 面积 | 随机基线 | 相对随机 | Top 10% 增量 |
+| --- | --- | --- | --- | --- | --- |
+| 男士邮件 | 12,863 | 25.96 | 29.74 | **-12.7%** | 0.76 pp（CI -0.03–1.55） |
+| 女士邮件 | 12,886 | 18.08 | 12.97 | **+39.4%** | **1.55 pp**（CI 0.34–2.75） |
+
+女士邮件组的增量排序优于随机；男士邮件组不稳定（Qini 低于随机），如实记录——Hillstrom 的协变量
+对增量区分度有限，这是真实数据的常见结果，不适合硬凑"模型很好"的结论。
+
+```bash
+python scripts/hillstrom_pipeline.py   # 首次运行自动下载 CSV；产出报告与图
+python scripts/run_pipeline.py         # 模拟数据流水线，用于测试/方法校验
+```
 
 ## 5. 关键设计决策
 
